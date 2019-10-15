@@ -8,7 +8,7 @@ def cov_to_tuple(X, thresh):
     m = max(X.shape)
     for i in np.arange(0, m):
         for j in np.arange((i + 1), m):
-            if (X(i, j) > thresh):
+            if (X[i, j] > thresh):
                 toRet.append([i, j, X[i, j]])
     return np.asarray(toRet)
 
@@ -21,3 +21,10 @@ def ts_to_cov(X, frame):
         cur = X[i:(i + frame), :]
         toRet[i] = np.cov(cur.T)
     return toRet
+
+def dropout(X, thresh):
+    for row in X:
+        for val in row:
+            if not val > thresh:
+                val = 0
+    return X
