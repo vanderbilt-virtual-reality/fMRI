@@ -1,0 +1,12 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import scipy as sc
+
+
+def cov_to_tuple(X, thresh):
+    
+    m = max(X.shape)
+    for i in np.arange(0, m):
+        for j in np.arange((i + 1), m):
+            if (X(i, j) > thresh):
+
