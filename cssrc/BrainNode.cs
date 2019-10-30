@@ -7,22 +7,44 @@ namespace Application
 {
     public class BrainNode
     {
-        public GameObject node;
-        public int index;
-        public float bold;
+        private GameObject node;
+        private int index;
+        private float bold;
+		private string desc;
+		private string region;
 
-        public BrainNode(int index, float[] loc)
+        public BrainNode(int index, float[] loc, string inRegion, string inDescription)
         {
-            node = Instantiate(node, new Vector3(loc[0], loc[1], loc[2]);
+            node = Instantiate(node, new Vector3(loc[0], loc[1], loc[2]));
             node.name = "RollerBall";
+			region = inRegion;
+			desc = inDescription;
         }
 
-        public updateIntensity()
+        public void updateIntensity(float newBold)
         {
-
+			bold = newBold;
         }
 
+		public string getRegion()
+		{
+			return region;
+		}
 
+		public string getDescription()
+		{
+			return desc;
+		}
 
+        public float getBold()
+		{
+			return bold;
+		}
+
+        public float[] getLoc()
+		{
+            // Find a way to return location, add it to PIV if you want see what's up
+			return 0;
+		}
     }
 }
