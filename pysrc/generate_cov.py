@@ -17,9 +17,9 @@ threshold = np.percentile(covariance, 99)
 
 tuples = cov_to_tuple(covariance, threshold)
 
-cov_mats = ts_to_cov(data, 100)
+cov_mats = ts_to_cov(data, 200)
 for mat in cov_mats:
-    cur = dropout(mat, np.percentile(mat, 99.4))
+    cur = dropout(mat, np.percentile(mat, 98.6))
     plt.imshow(cur, cmap='hot', interpolation='nearest')
     plt.show()
 

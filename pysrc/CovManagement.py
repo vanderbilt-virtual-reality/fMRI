@@ -25,7 +25,7 @@ def ts_to_cov(X, frame):
 def dropout(X, thresh):
     ToRet = np.zeros(X.shape)
     for i in np.arange(max(X.shape)):
-        for j in np.arange(min(X.shape)):
+        for j in np.arange(i + 1, max(X.shape)):
             if X[i, j] > thresh:
                 ToRet[i, j] = X[i, j]
     return ToRet
