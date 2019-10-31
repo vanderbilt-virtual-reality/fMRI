@@ -60,6 +60,7 @@ public class BrainNode : MonoBehaviour
 public class Brain : MonoBehaviour
 {
     public GameObject visualizer;
+    public LineRenderer lR;
     private GameObject[] brain;
 
     private void Start()
@@ -71,7 +72,10 @@ public class Brain : MonoBehaviour
             Vector3 loc = new Vector3(positions[i][0], positions[i][1], positions[i][2]);
             brain[i] = Instantiate(visualizer, loc, Quaternion.identity);
             BrainNode.CreateBrainNode(brain[i], i, loc, "a" + i, "a" + i);
+            brain[i].AddComponent<LineRenderer>();
         }
+        float[][] adjacencies = ReadTupleData();
+        RenderAllLines(adjacencies);
     }
 
     private void RenderLine(int i1, int i2, LineRenderer lineRenderer, float cov)
@@ -98,7 +102,7 @@ public class Brain : MonoBehaviour
             i1 = (int)tuples[i][0];
             i2 = (int)tuples[i][1];
             cov = tuples[i][2];
-            linesToRender[i] = GetComponent<LineRenderer>();
+            linesToRender[i] = brain[i1].GetComponent<LineRenderer>();
             RenderLine(i1, i2, linesToRender[i], cov);
         }
     }
@@ -120,6 +124,24 @@ public class Brain : MonoBehaviour
             positions[i] = position;
         }
         return positions;
+    }
+
+    float[][] ReadTupleData()
+    {
+        StreamReader strReader = new StreamReader("./Assets/src/tuples.csv");
+        float[][] adjacencies = new float[42][];
+        strReader.ReadLine();
+        for (int i = 0; i < 42; i++)
+        {
+            string dataString = strReader.ReadLine();
+            string[] dataValue = dataString.Split(',');
+            float[] adjacency = new float[3];
+            adjacency[0] = (float)System.Convert.ToDouble(dataValue[0]);
+            adjacency[1] = (float)System.Convert.ToDouble(dataValue[1]);
+            adjacency[2] = (float)System.Convert.ToDouble(dataValue[2]);
+            adjacencies[i] = adjacency;
+        }
+        return adjacencies;
     }
 }
 
