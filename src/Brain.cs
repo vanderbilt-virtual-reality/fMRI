@@ -19,7 +19,7 @@ public class BrainNode : MonoBehaviour
     //    desc = inDescription;
     //}
 
-    public static BrainNode CreateBrainNode(GameObject node, int ind, Vector3 loc, string inRegion, string inDescription)
+    public static BrainNode CreateBrainNode(GameObject node, int ind, string inRegion, string inDescription)
     {
         BrainNode myBrainNode = node.AddComponent<BrainNode>();
         myBrainNode.index = ind;
@@ -60,7 +60,6 @@ public class BrainNode : MonoBehaviour
 public class Brain : MonoBehaviour
 {
     public GameObject visualizer;
-    public LineRenderer lR;
     private GameObject[] brain;
 
     private void Start()
@@ -71,39 +70,53 @@ public class Brain : MonoBehaviour
         {
             Vector3 loc = new Vector3(positions[i][0], positions[i][1], positions[i][2]);
             brain[i] = Instantiate(visualizer, loc, Quaternion.identity);
-            BrainNode.CreateBrainNode(brain[i], i, loc, "a" + i, "a" + i);
-            brain[i].AddComponent<LineRenderer>();
+            BrainNode.CreateBrainNode(brain[i], i, "a" + i, "a" + i);
+            if (brain[i].GetComponent<LineRenderer>() == null)
+            {
+                brain[i].AddComponent<LineRenderer>();
+            }
         }
-        float[][] adjacencies = ReadTupleData();
+        float[][] adjacencies = ReadTupleData(0);
         RenderAllLines(adjacencies);
     }
 
-    private void RenderLine(int i1, int i2, LineRenderer lineRenderer, float cov)
+    private void RenderLine(int i1, int i2, LineRenderer lineRenderer)
     {
         Transform origin = brain[i1].transform;
         Transform destination = brain[i2].transform;
         lineRenderer.SetPosition(0, origin.position);
         lineRenderer.SetPosition(1, destination.position);
-        int covMax = 19126;
-        int covMin = -3135;
-        double gVal = 255 * System.Math.Floor((cov - covMin) / (covMax - covMin));
-        lineRenderer.material.color = new Color32(114, 0, (byte)gVal, 255);
     }
 
     private void RenderAllLines(float[][] tuples)
     {
+        ResetLines();
         int size = tuples.Length;
-        int i1 = 0;
-        int i2 = 0;
-        float cov = 0;
-        LineRenderer[] linesToRender = new LineRenderer[size];
+        int i1;
+        int i2;
+        float cov;
+        // LineRenderer[] linesToRender = new LineRenderer[size];
         for (int i = 0; i < size; ++i)
         {
             i1 = (int)tuples[i][0];
             i2 = (int)tuples[i][1];
             cov = tuples[i][2];
-            linesToRender[i] = brain[i1].GetComponent<LineRenderer>();
-            RenderLine(i1, i2, linesToRender[i], cov);
+            LineRenderer curLR = brain[i1].GetComponent<LineRenderer>();
+            int covMax = 19126;
+            int covMin = -3135;
+            float scale = (cov - covMin) / (covMax - covMin);
+            Debug.Log("Scale: " + scale + "| Cov: " + cov);
+            curLR.positionCount = 2;
+            curLR.material.color = new Color(1, 1, scale, 0);
+            RenderLine(i1, i2, curLR);
+        }
+    }
+
+    private void ResetLines()
+    {
+        for (int i = 0; i < 96; i++)
+        {
+            brain[i].GetComponent<LineRenderer>().positionCount = 0;
         }
     }
 
@@ -126,11 +139,12 @@ public class Brain : MonoBehaviour
         return positions;
     }
 
-    float[][] ReadTupleData()
+    float[][] ReadTupleData(int frame)
     {
         StreamReader strReader = new StreamReader("./Assets/src/tuples.csv");
         float[][] adjacencies = new float[42][];
         strReader.ReadLine();
+        int start = 42 * frame + 1;
         for (int i = 0; i < 42; i++)
         {
             string dataString = strReader.ReadLine();
