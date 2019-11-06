@@ -59,8 +59,11 @@ public class BrainNode : MonoBehaviour
 
 public class Brain : MonoBehaviour
 {
+    private static int covMax = 19126;
+    private static int covMin = 6500;
     public GameObject visualizer;
-    private GameObject[] brain;
+    private GameObject[] brain = new GameObject[96];
+    private GameObject[] chords = new GameObject[42];
 
     private void Start()
     {
@@ -76,48 +79,50 @@ public class Brain : MonoBehaviour
                 brain[i].AddComponent<LineRenderer>();
             }
         }
-        float[][] adjacencies = ReadTupleData(0);
-        RenderAllLines(adjacencies);
+        RenderAllLines(ReadTupleData(0));
+        // StartCoroutine(ClearChords());
     }
 
-    private void RenderLine(int i1, int i2, LineRenderer lineRenderer)
+    private float getScale(float cov)
     {
-        Transform origin = brain[i1].transform;
-        Transform destination = brain[i2].transform;
-        lineRenderer.SetPosition(0, origin.position);
-        lineRenderer.SetPosition(1, destination.position);
+        return  (cov - covMin) / (covMax - covMin);
     }
 
     private void RenderAllLines(float[][] tuples)
     {
-        ResetLines();
         int size = tuples.Length;
         int i1;
         int i2;
         float cov;
-        // LineRenderer[] linesToRender = new LineRenderer[size];
         for (int i = 0; i < size; ++i)
         {
             i1 = (int)tuples[i][0];
             i2 = (int)tuples[i][1];
             cov = tuples[i][2];
-            LineRenderer curLR = brain[i1].GetComponent<LineRenderer>();
-            int covMax = 19126;
-            int covMin = -3135;
-            float scale = (cov - covMin) / (covMax - covMin);
-            Debug.Log("Scale: " + scale + "| Cov: " + cov);
-            curLR.positionCount = 2;
-            curLR.material.color = new Color(1, 1, scale, 0);
-            RenderLine(i1, i2, curLR);
+
+            Vector3 origin = brain[i1].transform.position;
+            Vector3 destination = brain[i2].transform.position;
+            Vector3 mid = (origin + destination) * 0.5f;
+
+            chords[i] = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            chords[i].transform.localPosition = mid;
+            float scale = getScale(cov);
+            chords[i].transform.localScale = new Vector3(scale,
+                Vector3.Distance(origin, destination) * 0.5f,
+                scale);
+            chords[i].transform.up = destination - origin;
+            chords[i].GetComponent<Renderer>().material.color = new Color(1, 0, 1, scale);
         }
     }
 
-    private void ResetLines()
+    IEnumerator ClearChords()
     {
-        for (int i = 0; i < 96; i++)
+        yield return new WaitForSeconds(3);
+        for (int i = 0; i < 42; i++)
         {
-            brain[i].GetComponent<LineRenderer>().positionCount = 0;
+            Destroy(chords[i]);
         }
+        chords = new GameObject[42];
     }
 
     float[][] ReadCSVFile()
