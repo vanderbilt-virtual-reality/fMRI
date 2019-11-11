@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.IO;
 
+
+
 public class BrainNode : MonoBehaviour
 {
     public int index;
@@ -59,16 +61,21 @@ public class BrainNode : MonoBehaviour
 
 public class Brain : MonoBehaviour
 {
+    private static int NUM_FRAMES = 1221;
+    private int NUM_TUPLES = 50;
+    private float[][] adjacencies = new float[51282][];
     private static int covMax = 19126;
     private static int covMin = 6500;
     public GameObject visualizer;
     private GameObject[] brain = new GameObject[96];
-    private GameObject[] chords = new GameObject[42];
+    private GameObject[] chords = new GameObject[50];
 
     private void Start()
     {
         brain = new GameObject[96];
         float[][] positions = ReadCSVFile();
+        SetFrameData();
+
         for (int i = 0; i < 96; i++)
         {
             Vector3 loc = new Vector3(positions[i][0], positions[i][1], positions[i][2]);
@@ -79,8 +86,17 @@ public class Brain : MonoBehaviour
                 brain[i].AddComponent<LineRenderer>();
             }
         }
-        RenderAllLines(ReadTupleData(0));
-        // StartCoroutine(ClearChords());
+
+        /**for (int i = 0; i < NUM_FRAMES; ++i)
+        {
+            //RenderAllLines(GetFrameData(i));
+            //StartCoroutine(ClearChords());
+        }**/
+
+        //RenderAllLines(GetFrameData(0));
+        StartCoroutine(ClearChords());
+        //RenderAllLines(GetFrameData(20));
+        //StartCoroutine(ClearChords());
     }
 
     private float getScale(float cov)
@@ -117,12 +133,32 @@ public class Brain : MonoBehaviour
 
     IEnumerator ClearChords()
     {
-        yield return new WaitForSeconds(3);
-        for (int i = 0; i < 42; i++)
+        //yield return new WaitForSeconds(5);
+
+        //for (int i = 0; i < NUM_TUPLES; i++)
+        //{
+          //  Destroy(chords[i]);
+        //}
+        //chords = new GameObject[NUM_TUPLES];
+        //RenderAllLines(GetFrameData(20));
+
+        for (int i = 0; i < NUM_FRAMES; i++)
+        {
+            RenderAllLines(GetFrameData(i));
+            Debug.Log(i);
+            yield return StartCoroutine(clear_helper());
+            yield return new WaitForSeconds(1.0f);
+        }
+
+    }
+
+    IEnumerator clear_helper() {
+        yield return new WaitForSeconds(5.0f);
+        for (int i = 0; i < NUM_TUPLES; i++)
         {
             Destroy(chords[i]);
         }
-        chords = new GameObject[42];
+        chords = new GameObject[NUM_TUPLES];
     }
 
     float[][] ReadCSVFile()
@@ -133,7 +169,7 @@ public class Brain : MonoBehaviour
         for (int i = 0; i < 96; i++)
         {
             string data_String = strReader.ReadLine();
-            //store data 
+            //store data
             string[] data_value = data_String.Split(',');
             float[] position = new float[3];
             position[0] = (float)System.Convert.ToDouble(data_value[0]);
@@ -144,14 +180,28 @@ public class Brain : MonoBehaviour
         return positions;
     }
 
-    float[][] ReadTupleData(int frame)
+    float[][] GetFrameData(int frameNum)
+    {
+        float[][] frame = new float[NUM_TUPLES][];
+        int start = frameNum * NUM_TUPLES;
+        for (int i = 0; i < NUM_TUPLES; i++) {
+            frame[i] = new float[3];
+            for (int j = 0; j < 3; j++) {
+                frame[i][j] = adjacencies[start + i][j];
+                //Debug.Log(start + i);
+                //Debug.Log(adjacencies[start + i][j]);
+            }
+        }
+
+        return frame;
+    }
+
+    void SetFrameData()
     {
         StreamReader strReader = new StreamReader("./Assets/src/tuples.csv");
-        float[][] adjacencies = new float[42][];
-        strReader.ReadLine();
-        int start = 42 * frame + 1;
-        for (int i = 0; i < 42; i++)
-        {
+        //strReader.ReadLine();
+
+        for (int i = 0; i < 51282; i++) {
             string dataString = strReader.ReadLine();
             string[] dataValue = dataString.Split(',');
             float[] adjacency = new float[3];
@@ -160,7 +210,6 @@ public class Brain : MonoBehaviour
             adjacency[2] = (float)System.Convert.ToDouble(dataValue[2]);
             adjacencies[i] = adjacency;
         }
-        return adjacencies;
     }
 }
 
