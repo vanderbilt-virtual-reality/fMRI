@@ -3,14 +3,15 @@ import matplotlib.pyplot as plt
 import scipy as sc
 
 
-def cov_to_tuple(X, thresh):
+def cov_to_tuple(X):
     toRet = []
     m = max(X.shape)
     for i in np.arange(0, m):
         for j in np.arange((i + 1), m):
-            if (X[i, j] > thresh):
-                toRet.append([i, j, X[i, j]])
-    return np.asarray(toRet)
+            # if (X[i, j] > thresh):
+            toRet.append([i, j, X[i, j]])
+    toRet = sorted(toRet,key=lambda l:l[2])
+    return np.asarray(toRet[-50:])
 
 def ts_to_cov(X, frame):
     n = min(X.shape)
@@ -29,3 +30,4 @@ def dropout(X, thresh):
             if X[i, j] > thresh:
                 ToRet[i, j] = X[i, j]
     return ToRet
+
