@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System.IO;
+using TMPro;
 
 
 
@@ -66,25 +67,43 @@ public class Brain : MonoBehaviour
     private float[][] adjacencies = new float[51282][];
     private static int covMax = 19126;
     private static int covMin = 6500;
-    public GameObject visualizer;
-    private GameObject[] brain = new GameObject[96];
-    private GameObject[] chords = new GameObject[50];
+    public GameObject visualizer; // empty object 
+    public GameObject[] brain = new GameObject[96];
+    public GameObject[] chords = new GameObject[50];
+
+    //public GameObject[] child = new GameObject[96];
 
     private void Start()
     {
         brain = new GameObject[96];
         float[][] positions = ReadCSVFile();
+        string[] regions = ReadRegions();
         SetFrameData();
 
         for (int i = 0; i < 96; i++)
         {
             Vector3 loc = new Vector3(positions[i][0], positions[i][1], positions[i][2]);
             brain[i] = Instantiate(visualizer, loc, Quaternion.identity);
+            //placeholder sphere object
+            GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            sphere.transform.position = loc;
+            //make sphere child component of brain node, with no particular use by now...
+            //comment it bacuase rollerball prefab moves ...? comment it out if rollerball works fine
+            //sphere.transform.parent = brain[i].transform; 
+
             BrainNode.CreateBrainNode(brain[i], i, "a" + i, "a" + i);
             if (brain[i].GetComponent<LineRenderer>() == null)
             {
                 brain[i].AddComponent<LineRenderer>();
+
             }
+            //assign text
+            MeshFilter meshFilter = brain[i].GetComponent<MeshFilter>();
+            DestroyImmediate(meshFilter);
+            brain[i].AddComponent<TextMesh>();
+            brain[i].GetComponent<TextMesh>().text = regions[i];
+            //make text invisible for now; text will be visible in laser script
+            //brain[i].GetComponent<MeshRenderer>().enabled = false;
         }
 
         /**for (int i = 0; i < NUM_FRAMES; ++i)
@@ -97,11 +116,12 @@ public class Brain : MonoBehaviour
         StartCoroutine(ClearChords());
         //RenderAllLines(GetFrameData(20));
         //StartCoroutine(ClearChords());
+
     }
 
     private float getScale(float cov)
     {
-        return  (cov - covMin) / (covMax - covMin);
+        return (cov - covMin) / (covMax - covMin);
     }
 
     private void RenderAllLines(float[][] tuples)
@@ -137,7 +157,7 @@ public class Brain : MonoBehaviour
 
         //for (int i = 0; i < NUM_TUPLES; i++)
         //{
-          //  Destroy(chords[i]);
+        //  Destroy(chords[i]);
         //}
         //chords = new GameObject[NUM_TUPLES];
         //RenderAllLines(GetFrameData(20));
@@ -145,14 +165,15 @@ public class Brain : MonoBehaviour
         for (int i = 0; i < NUM_FRAMES; i++)
         {
             RenderAllLines(GetFrameData(i));
-            Debug.Log(i);
+            //Debug.Log(i);
             yield return StartCoroutine(clear_helper());
             yield return new WaitForSeconds(1.0f);
         }
 
     }
 
-    IEnumerator clear_helper() {
+    IEnumerator clear_helper()
+    {
         yield return new WaitForSeconds(5.0f);
         for (int i = 0; i < NUM_TUPLES; i++)
         {
@@ -179,14 +200,29 @@ public class Brain : MonoBehaviour
         }
         return positions;
     }
+    string[] ReadRegions()
+    {
+        string[] regions = new string[96];
+        StreamReader strReader = new StreamReader("./Assets/src/location_data.csv");
+        for (int i = 0; i < 96; i++)
+        {
+            string data_String = strReader.ReadLine();
+            string[] data_value = data_String.Split(',');
+            regions[i] = data_value[0];
+            Debug.Log(regions[i]);
+        }
+        return regions;
+    }
 
     float[][] GetFrameData(int frameNum)
     {
         float[][] frame = new float[NUM_TUPLES][];
         int start = frameNum * NUM_TUPLES;
-        for (int i = 0; i < NUM_TUPLES; i++) {
+        for (int i = 0; i < NUM_TUPLES; i++)
+        {
             frame[i] = new float[3];
-            for (int j = 0; j < 3; j++) {
+            for (int j = 0; j < 3; j++)
+            {
                 frame[i][j] = adjacencies[start + i][j];
                 //Debug.Log(start + i);
                 //Debug.Log(adjacencies[start + i][j]);
@@ -201,7 +237,8 @@ public class Brain : MonoBehaviour
         StreamReader strReader = new StreamReader("./Assets/src/tuples.csv");
         //strReader.ReadLine();
 
-        for (int i = 0; i < 51282; i++) {
+        for (int i = 0; i < 51282; i++)
+        {
             string dataString = strReader.ReadLine();
             string[] dataValue = dataString.Split(',');
             float[] adjacency = new float[3];
@@ -249,6 +286,6 @@ public class Brain : MonoBehaviour
 //     //Update is called once per frame
 //    void Update()
 //    {
-        
+
 //    }
 //}
