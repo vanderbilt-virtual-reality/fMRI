@@ -1,79 +1,27 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using UnityEngine;
 using System.IO;
-using TMPro;
-
-
-
-public class BrainNode : MonoBehaviour
-{
-    public int index;
-    public float bold;
-    public string desc;
-    public string region;
-
-    //public BrainNode(int inIndex, Vector3 loc, string inRegion, string inDescription)
-    //{
-    //    node = Instantiate(node, loc, Quaternion.identity);
-    //    index = inIndex;
-    //    node.name = "RollerBall" + index;
-    //    region = inRegion;
-    //    desc = inDescription;
-    //}
-
-    public static BrainNode CreateBrainNode(GameObject node, int ind, string inRegion, string inDescription)
-    {
-        BrainNode myBrainNode = node.AddComponent<BrainNode>();
-        myBrainNode.index = ind;
-        myBrainNode.region = inRegion;
-        myBrainNode.desc = inDescription;
-        node.name = inRegion;
-        return myBrainNode;
-    }
-
-    public void updateIntensity(float newBold)
-    {
-        bold = newBold;
-    }
-
-    public string getRegion()
-    {
-        return region;
-    }
-
-    public string getDescription()
-    {
-        return desc;
-    }
-
-    public float getBold()
-    {
-        return bold;
-    }
-
-    public float[] getLoc()
-    {
-        // Find a way to return location, add it to PIV if you want see what's up
-        return null;
-    }
-
-}
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
+using Valve.VR.Extras;
 
 public class Brain : MonoBehaviour
 {
     private static int NUM_FRAMES = 1221;
     private int NUM_TUPLES = 50;
-    private float[][] adjacencies = new float[51282][];
-    private static int covMax = 19126;
-    private static int covMin = 6500;
-    public GameObject visualizer; // empty object 
+    private float[][] adjacencies = new float[61050][];
+    private static int covMax = 15000;
+    private static int covMin = 5000;
+    public GameObject visualizer;
     public GameObject[] brain = new GameObject[96];
-    public GameObject[] chords = new GameObject[50];
+    private GameObject[] chords = new GameObject[50];
+    //private GameObject[] chords2 = new GameObject[50];
+    //private bool flag = true;
+    public SteamVR_LaserPointer laserPointer;
 
-    //public GameObject[] child = new GameObject[96];
-
-    private void Start()
+    public void Start()
     {
         brain = new GameObject[96];
         float[][] positions = ReadCSVFile();
@@ -84,18 +32,16 @@ public class Brain : MonoBehaviour
         {
             Vector3 loc = new Vector3(positions[i][0], positions[i][1], positions[i][2]);
             brain[i] = Instantiate(visualizer, loc, Quaternion.identity);
-            //placeholder sphere object
+            brain[i].name = regions[i];
             GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             sphere.transform.position = loc;
-            //make sphere child component of brain node, with no particular use by now...
-            //comment it bacuase rollerball prefab moves ...? comment it out if rollerball works fine
-            //sphere.transform.parent = brain[i].transform; 
+            sphere.transform.parent = brain[i].transform;
+            sphere.name = brain[i].name;
 
-            BrainNode.CreateBrainNode(brain[i], i, "a" + i, "a" + i);
+
             if (brain[i].GetComponent<LineRenderer>() == null)
             {
                 brain[i].AddComponent<LineRenderer>();
-
             }
             //assign text
             MeshFilter meshFilter = brain[i].GetComponent<MeshFilter>();
@@ -103,7 +49,7 @@ public class Brain : MonoBehaviour
             brain[i].AddComponent<TextMesh>();
             brain[i].GetComponent<TextMesh>().text = regions[i];
             //make text invisible for now; text will be visible in laser script
-            //brain[i].GetComponent<MeshRenderer>().enabled = false;
+            brain[i].GetComponent<MeshRenderer>().enabled = false;
         }
 
         /**for (int i = 0; i < NUM_FRAMES; ++i)
@@ -116,7 +62,49 @@ public class Brain : MonoBehaviour
         StartCoroutine(ClearChords());
         //RenderAllLines(GetFrameData(20));
         //StartCoroutine(ClearChords());
+    }
 
+    public void Awake()
+    {
+        laserPointer.PointerIn += PointerInside;
+        laserPointer.PointerOut += PointerOutside;
+        laserPointer.PointerClick += PointerClickOn;
+    }
+
+    public void PointerClickOn(object sender, PointerEventArgs e)
+    {
+        for (int i = 0; i < 96; i++)
+        {
+            if (e.target.name == brain[i].name)
+            {
+                //brain[i].SetActive(true);
+                brain[i].GetComponent<MeshRenderer>().enabled = true;
+            }
+        }
+    }
+
+    public void PointerInside(object sender, PointerEventArgs e)
+    {
+        for (int i = 0; i < 96; i++)
+        {
+            if (e.target.name == brain[i].name)
+            {
+                //brain[i].SetActive(true);
+                brain[i].GetComponent<MeshRenderer>().enabled = true;
+            }
+        }
+    }
+
+    public void PointerOutside(object sender, PointerEventArgs e)
+    {
+        for (int i = 0; i < 96; i++)
+        {
+            if (e.target.name == brain[i].name)
+            {
+                //brain[i].SetActive(false);
+                brain[i].GetComponent<MeshRenderer>().enabled = false;
+            }
+        }
     }
 
     private float getScale(float cov)
@@ -147,7 +135,7 @@ public class Brain : MonoBehaviour
                 Vector3.Distance(origin, destination) * 0.5f,
                 scale);
             chords[i].transform.up = destination - origin;
-            chords[i].GetComponent<Renderer>().material.color = new Color(1, 0, 1, scale);
+            chords[i].GetComponent<Renderer>().material.color = new Color(1, scale, 1, 0);
         }
     }
 
@@ -162,19 +150,27 @@ public class Brain : MonoBehaviour
         //chords = new GameObject[NUM_TUPLES];
         //RenderAllLines(GetFrameData(20));
 
+        var stopwatch = new Stopwatch();
+        stopwatch.Start();
+
         for (int i = 0; i < NUM_FRAMES; i++)
         {
             RenderAllLines(GetFrameData(i));
-            //Debug.Log(i);
             yield return StartCoroutine(clear_helper());
-            yield return new WaitForSeconds(1.0f);
+            //yield return new WaitForSeconds(1.0f);
         }
+
+        stopwatch.Stop();
+
+        float eTime = stopwatch.ElapsedMilliseconds;
+
 
     }
 
     IEnumerator clear_helper()
     {
-        yield return new WaitForSeconds(5.0f);
+        //yield return new WaitForSeconds(0.389f);
+        yield return new WaitForSeconds(0.1f);
         for (int i = 0; i < NUM_TUPLES; i++)
         {
             Destroy(chords[i]);
@@ -190,7 +186,7 @@ public class Brain : MonoBehaviour
         for (int i = 0; i < 96; i++)
         {
             string data_String = strReader.ReadLine();
-            //store data
+            //store data 
             string[] data_value = data_String.Split(',');
             float[] position = new float[3];
             position[0] = (float)System.Convert.ToDouble(data_value[0]);
@@ -209,7 +205,7 @@ public class Brain : MonoBehaviour
             string data_String = strReader.ReadLine();
             string[] data_value = data_String.Split(',');
             regions[i] = data_value[0];
-            Debug.Log(regions[i]);
+
         }
         return regions;
     }
@@ -221,6 +217,7 @@ public class Brain : MonoBehaviour
         for (int i = 0; i < NUM_TUPLES; i++)
         {
             frame[i] = new float[3];
+            //UnityEngine.Debug.Log(start + i);
             for (int j = 0; j < 3; j++)
             {
                 frame[i][j] = adjacencies[start + i][j];
@@ -237,7 +234,7 @@ public class Brain : MonoBehaviour
         StreamReader strReader = new StreamReader("./Assets/src/tuples.csv");
         //strReader.ReadLine();
 
-        for (int i = 0; i < 51282; i++)
+        for (int i = 0; i < 61050; i++)
         {
             string dataString = strReader.ReadLine();
             string[] dataValue = dataString.Split(',');
