@@ -6,6 +6,7 @@ using System.IO;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using Valve.VR.Extras;
+using System.Text.RegularExpressions;
 
 public class Brain : MonoBehaviour
 {
@@ -20,24 +21,30 @@ public class Brain : MonoBehaviour
     //private GameObject[] chords2 = new GameObject[50];
     //private bool flag = true;
     public SteamVR_LaserPointer laserPointer;
+    public Camera m_Camera;
 
     public void Start()
     {
         brain = new GameObject[96];
+        //create button served as textBoard
+        Button[] textBoards = new Button[96];
         float[][] positions = ReadCSVFile();
         string[] regions = ReadRegions();
+        string[] descriptions = ReadDescription();
         SetFrameData();
 
         for (int i = 0; i < 96; i++)
         {
             Vector3 loc = new Vector3(positions[i][0], positions[i][1], positions[i][2]);
             brain[i] = Instantiate(visualizer, loc, Quaternion.identity);
+
+            //set name to neural object
             brain[i].name = regions[i];
+            //placeholder sphere created
             GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             sphere.transform.position = loc;
-            sphere.transform.parent = brain[i].transform;
+            brain[i].transform.parent = sphere.transform;
             sphere.name = brain[i].name;
-
 
             if (brain[i].GetComponent<LineRenderer>() == null)
             {
@@ -48,6 +55,14 @@ public class Brain : MonoBehaviour
             DestroyImmediate(meshFilter);
             brain[i].AddComponent<TextMesh>();
             brain[i].GetComponent<TextMesh>().text = regions[i];
+            string appending = "\n" + descriptions[i];
+            // add values on position
+
+            brain[i].GetComponent<TextMesh>().text += appending;
+            //making it face to the camera, rotate the text
+            //brain[i].GetComponent<TextMesh>().transform.localEulerAngles += new Vector3(0, 0, 0);
+            //brain[i].GetComponent<TextMesh>().transform.LookAt(transform.position + m_Camera.transform.rotation * Vector3.forward,
+            //m_Camera.transform.rotation * Vector3.up+new Vector3(0,75,15));
             //make text invisible for now; text will be visible in laser script
             brain[i].GetComponent<MeshRenderer>().enabled = false;
         }
@@ -177,6 +192,7 @@ public class Brain : MonoBehaviour
         }
         chords = new GameObject[NUM_TUPLES];
     }
+    //per 100 characters change line
 
     float[][] ReadCSVFile()
     {
@@ -210,6 +226,24 @@ public class Brain : MonoBehaviour
         return regions;
     }
 
+    public static string SpliceText(string str)
+    {
+        return Regex.Replace(str, "(.{" + 100 + "})", "$1" + System.Environment.NewLine);
+    }
+
+    //Read Description
+    string[] ReadDescription()
+    {
+        string[] descriptions = new string[96];
+        StreamReader strReader = new StreamReader("./Assets/src/brain_description.txt");
+        for (int i = 0; i < 96; i++)
+        {
+            string data_String = strReader.ReadLine();
+            descriptions[i] = System.Convert.ToString(SpliceText(data_String));
+            UnityEngine.Debug.Log(descriptions[i]);
+        }
+        return descriptions;
+    }
     float[][] GetFrameData(int frameNum)
     {
         float[][] frame = new float[NUM_TUPLES][];
