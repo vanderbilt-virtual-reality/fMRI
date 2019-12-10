@@ -5,7 +5,7 @@
       "app_key": "application.generated.unity.fmri_environment.exe",
       "launch_type": "url",
       "url": "steam://launch/",
-      "action_manifest_path": "C:\\Users\\emtechguest\\Desktop\\fmri\\fMRI_Environment\\Assets\\StreamingAssets\\SteamVR\\actions.json",
+      "action_manifest_path": "C:\\Users\\emtechguest\\git\\fMRI\\fMRI_Environment\\Assets\\StreamingAssets\\SteamVR\\actions.json",
       "strings": {
         "en_us": {
           "name": "fMRI_Environment [Testing]"
